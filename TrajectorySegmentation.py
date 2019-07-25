@@ -240,8 +240,6 @@ class TrajectorySegmentation:
     def segmentByStopMove(self, max_dist=100, min_time=60, time_tolerance=60, merge_tolerance=100):
         cbsmote = CBSmot()
         index, stops = cbsmote.segment_stops_moves(self.row_data, max_dist, min_time, time_tolerance, merge_tolerance)
-        print("#"*100)
-        print(index,stops)
         index_move = []
         moves = []
         start = 0
@@ -260,15 +258,18 @@ class TrajectorySegmentation:
             idx = self.row_data.index.get_loc(p[1])
             segments.append([last_idx,idx])
             last_idx = idx+1
-        segments.append([last_idx,len(self.row_data)-1])
+        segments.append([last_idx,len(self.row_data)])
         return segments, stops+moves
 
-    def get_segment_labels(self,segments):
+    @staticmethod
+    def get_segment_labels(segments):
         labels = np.zeros(segments[len(segments)-1][1])
+        print(len(labels))
         l = 0
         for s in segments:
             labels[s[0]:s[1]+1]=l
             l+=1
+
         return labels
 
     def __del__(self):

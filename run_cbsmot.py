@@ -1,6 +1,7 @@
 from CBSmot import CBSmot
 from sklearn.model_selection import ParameterGrid
 from TrajectorySegmentation import TrajectorySegmentation
+import SegmentationEvaluation
 import pandas as pd
 import time
 
@@ -25,35 +26,15 @@ def split_df(df,label='tid'):
 for df in dfs:
     all_dfs+=split_df(df)
 
-
-#ts_obj=TrajectorySegmentation()
-#ts_obj.load_data(lat='latitude',lon='longitude',time_date='time',
-#                 labels=['label'],seperator=';',src='databases/Hurricanes/h_d1.txt')
 ts_obj=TrajectorySegmentation()
 ts_obj.load_data(lat='latitude',lon='longitude',time_date='time',
                  labels=['label'],seperator=';',src=all_dfs[0])
-a,b = ts_obj.segmentByLabel(label='label')
-print(a)
-a,b = ts_obj.segmentByStopMove(max_dist=100000, min_time=1, time_tolerance=100000, merge_tolerance=0)
-print(a)
-print(ts_obj.get_segment_labels(a))
-print("Here we go")
-print(type(b[0]))
-print("Done")
-exit()
-cbsmot = CBSmot()
-for i in range(0,len(dfs)):
-    dataframes = split_df(dfs[i])
-    lowest_cost = float('inf')
-    for p in parm_grid:
-        for df in dataframes:
-            continue
-    test_dfs = []
-    for j in range(0, len(dfs)):
-        if j != i:
-            test_dfs+=split_df(dfs[j])
-    #print("--- %s seconds ---" % (time.time() - start_time))
+segment_indexes,segments = ts_obj.segmentByLabel(label='label')
+ground_truth = TrajectorySegmentation.get_segment_labels(segment_indexes)
 
-########################################################################################################################
+segment_indexes,segments = ts_obj.segmentByStopMove(max_dist=100000, min_time=1, time_tolerance=100000, merge_tolerance=0)
+predicted = TrajectorySegmentation.get_segment_labels(segment_indexes)
+print(SegmentationEvaluation.harmonic_mean(ground_truth,predicted))
+
 
 
