@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from Distances import Distances
 from collections import namedtuple
-from CBSmot import CBSmot
+from SegmentationAlgorithms.CBSMoT import CBSmot
 
 
 class TrajectoryFeatureExtractor:

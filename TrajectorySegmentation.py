@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
-from CBSmot import CBSmot
+from SegmentationAlgorithms.CBSMoT import CBSmot
+from SegmentationAlgorithms.DBSMoT import DBSmot
+
 
 # pd.options.mode.chained_assignment = 'raise'
 # pd.options.mode.chained_assignment = None
@@ -28,37 +30,26 @@ class TrajectorySegmentation:
 
     def load_data(self, **kwargs):
         # lat='lat',lon='lon',alt='alt',time_date='time_date',labels=['label1'],src='~/gps_fe/bigdata2_8696/ex_traj/5428_walk_790.csv',seperator=','
-        print('loading...')
         lat = kwargs.get('lat', "lat")
-        print(lat)
         lon = kwargs.get('lon', "lon")
-        print(lon)
         alt = kwargs.get('alt', None)
-        print(alt)
         time_date = kwargs.get('time_date', "time_date")
 
-        print(time_date)
         labels = kwargs.get('labels', "['target']")
-        print(labels)
         src = kwargs.get('src', "~/gps_fe/bigdata2_8696/ex_traj/5428_walk_790.csv")
-        print(src)
         seperator = kwargs.get('seperator', ",")
-        print(seperator)
 
         self.labels = labels
         # input data needs lat,lon,alt,time_date, [Labels]
         # ,nrows=80000
         #self.raw_data = self.raw_data.drop_duplicates(time_date)
-        print(type(src))
         if type(src) is str:
             self.row_data = pd.read_csv(src, sep=seperator, parse_dates=[time_date],index_col=time_date)
-            print(self.row_data)
         if type(src) is pd.DataFrame:
             self.row_data = src.copy()
             f = kwargs.get('time_format', "%Y-%m-%d %H:%M:%S")
             self.row_data[time_date] = pd.to_datetime(self.row_data[time_date],format=f)
             self.row_data.set_index(pd.DatetimeIndex(self.row_data[time_date]),inplace=True)
-            print(self.row_data)
         #self.raw_data = self.raw_data.drop_duplicates(['t_user_id',time_date])
         #self.raw_data.set_index(time_date)
 
@@ -85,7 +76,6 @@ class TrajectorySegmentation:
         for label in labels:
             self.row_data = self.row_data.loc[pd.notnull(self.row_data[label]), :]
 
-        print('Data loaded.')
         return self.row_data
 
     def multi_label_segmentation(self, labels=['t_user_id', 'transportation_mode'],max_points=1000,max_length=False):
@@ -261,10 +251,12 @@ class TrajectorySegmentation:
         segments.append([last_idx,len(self.row_data)])
         return segments, stops+moves
 
+    def segment_DBSMoT(self,min_dir_change=None,min_time=None,max_tolerance=None):
+        dbsmot = DBSmot()
+        dbsmot.segment(self.row_data,min_dir_change,min_time,max_tolerance)
     @staticmethod
     def get_segment_labels(segments):
         labels = np.zeros(segments[len(segments)-1][1])
-        print(len(labels))
         l = 0
         for s in segments:
             labels[s[0]:s[1]+1]=l
@@ -274,4 +266,3 @@ class TrajectorySegmentation:
 
     def __del__(self):
         del self.row_data
-        print('clear memory')
