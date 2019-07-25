@@ -26,15 +26,18 @@ for df in dfs:
     all_dfs+=split_df(df)
 
 
-ts_obj=TrajectorySegmentation()
-ts_obj.load_data(lat='latitude',lon='longitude',time_date='time',
-                 labels=['label'],seperator=';',src='databases/Hurricanes/h_d1.txt')
+#ts_obj=TrajectorySegmentation()
+#ts_obj.load_data(lat='latitude',lon='longitude',time_date='time',
+#                 labels=['label'],seperator=';',src='databases/Hurricanes/h_d1.txt')
 ts_obj=TrajectorySegmentation()
 ts_obj.load_data(lat='latitude',lon='longitude',time_date='time',
                  labels=['label'],seperator=';',src=all_dfs[0])
-a,b = ts_obj.segmentByStopMove(max_dist=100000, min_time=5, time_tolerance=100000, merge_tolerance=5)
+a,b = ts_obj.segmentByLabel(label='label')
+print(a)
+a,b = ts_obj.segmentByStopMove(max_dist=100000, min_time=1, time_tolerance=100000, merge_tolerance=0)
+print(a)
+print(ts_obj.get_segment_labels(a))
 print("Here we go")
-print(type(a[0][0]))
 print(type(b[0]))
 print("Done")
 exit()
