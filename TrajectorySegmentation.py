@@ -49,7 +49,16 @@ class TrajectorySegmentation:
         # input data needs lat,lon,alt,time_date, [Labels]
         # ,nrows=80000
         #self.raw_data = self.raw_data.drop_duplicates(time_date)
-        self.row_data = pd.read_csv(src, sep=seperator, parse_dates=[time_date],index_col=time_date)
+        print(type(src))
+        if type(src) is str:
+            self.row_data = pd.read_csv(src, sep=seperator, parse_dates=[time_date],index_col=time_date)
+            print(self.row_data)
+        if type(src) is pd.DataFrame:
+            self.row_data = src.copy()
+            f = kwargs.get('time_format', "%Y-%m-%d %H:%M:%S")
+            self.row_data[time_date] = pd.to_datetime(self.row_data[time_date],format=f)
+            self.row_data.set_index(pd.DatetimeIndex(self.row_data[time_date]),inplace=True)
+            print(self.row_data)
         #self.raw_data = self.raw_data.drop_duplicates(['t_user_id',time_date])
         #self.raw_data.set_index(time_date)
 
@@ -231,6 +240,7 @@ class TrajectorySegmentation:
     def segmentByStopMove(self, max_dist=100, min_time=60, time_tolerance=60, merge_tolerance=100):
         cbsmote = CBSmot()
         index, stops = cbsmote.segment_stops_moves(self.row_data, max_dist, min_time, time_tolerance, merge_tolerance)
+        print(index,stops)
         index_move = []
         moves = []
         start = 0
