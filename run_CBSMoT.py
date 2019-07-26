@@ -18,7 +18,7 @@ def get_fv():
     dfs.append(pd.read_csv('databases/Fishing Vessels/fv_d8.txt',sep=';'))
     dfs.append(pd.read_csv('databases/Fishing Vessels/fv_d9.txt',sep=';'))
     dfs.append(pd.read_csv('databases/Fishing Vessels/fv_d10.txt',sep=';'))
-    return dfs
+    return dfs,get_fv_parms()
 
 def get_hurr():
     dfs.append(pd.read_csv('databases/Hurricanes/h_d1.txt',sep=';'))
@@ -31,17 +31,20 @@ def get_hurr():
     dfs.append(pd.read_csv('databases/Hurricanes/h_d8.txt',sep=';'))
     dfs.append(pd.read_csv('databases/Hurricanes/h_d9.txt',sep=';'))
     dfs.append(pd.read_csv('databases/Hurricanes/h_d10.txt',sep=';'))
-    return dfs
-def get_hurr_parms():
-    return ParameterGrid({'max_dist':list(range(15000,100000,5000)),
-                  'min_time':list(range(2,24,2)),
-                  'time_tolerance':list(range(2,12,4)),
-                   'merge_tolerance':list(range(0,1002,500))})
-def get_fv_parms():
-    pass
+    return dfs, get_hurr_parms()
 
-dfs = get_hurr()
-parameter_grid = get_hurr_parms()
+def get_hurr_parms():
+    return ParameterGrid({'area':list(np.arange(0.1,1,0.05)),
+                  'min_time':list(range(1,24,4)),
+                  'time_tolerance':[0],
+                   'merge_tolerance':[0]})
+def get_fv_parms():
+    return ParameterGrid({'area':list(np.arange(0.1,1,0.1)),
+                  'min_time':list(range(2,12,2)),
+                  'time_tolerance':list(range(0,2,1)),
+                   'merge_tolerance':list(range(0,1,1))})
+
+dfs,parameter_grid = get_hurr()
 
 all_dfs = []
 def split_df(df,label='tid'):
@@ -51,29 +54,36 @@ def split_df(df,label='tid'):
     for tid in tids:
         real_dfs.append(df.loc[df.tid ==tid])
     return real_dfs
-for df in dfs:
-    all_dfs+=split_df(df)
+
 results = []
 hm_best = 0
-N=5
+N=10
+best_p = {}
 for p in parameter_grid:
-    hm_sum=0
-    for df in all_dfs[:N]:
-        ts_obj=TrajectorySegmentation()
-        ts_obj.load_data(lat='latitude',lon='longitude',time_date='time',
-                         labels=['label'],seperator=';',src=df)
-        segment_indexes,segments = ts_obj.segmentByLabel(label='label')
-        ground_truth = TrajectorySegmentation.get_segment_labels(segment_indexes)
-        segment_indexes,segments = ts_obj.segment_CBSMoT(max_dist=p['max_dist'],
-                                                         min_time=p['min_time']*3600,
-                                                         time_tolerance=p['time_tolerance']*3600,
-                                                         merge_tolerance=p['merge_tolerance'])
-        predicted = TrajectorySegmentation.get_segment_labels(segment_indexes)
-        hm=SegmentationEvaluation.harmonic_mean(ground_truth,predicted)
-        hm_sum += hm
-    print(p,"%.4f"%(hm_sum/N))
-    if hm_sum>hm_best:
-        print("Best Parameters",p)
-        print("Harmonic Mean",(hm_sum/N))
-        hm_best = hm_sum
-
+    for i in range(0,len(dfs)):
+        hm_sum = 0
+        train_dfs = split_df(dfs[i])
+        test_dfs = []
+        for j in range(0, len(dfs)):
+            if j!=i:
+                test_dfs += split_df(dfs[j])
+        for tdf in train_dfs:
+            ts_obj=TrajectorySegmentation()
+            ts_obj.load_data(lat='latitude',lon='longitude',time_date='time',
+                             labels=['label'],seperator=';',src=df)
+            segment_indexes,segments = ts_obj.segmentByLabel(label='label')
+            ground_truth = TrajectorySegmentation.get_segment_labels(segment_indexes)
+            segment_indexes,segments = ts_obj.segment_CBSMoT(max_dist=None,
+                                                             area=p['area'],
+                                                             min_time=p['min_time']*3600,
+                                                             time_tolerance=p['time_tolerance']*3600,
+                                                             merge_tolerance=p['merge_tolerance'])
+            predicted = TrajectorySegmentation.get_segment_labels(segment_indexes)
+            hm=SegmentationEvaluation.harmonic_mean(ground_truth,predicted)
+            hm_sum += hm
+        print(p,"%.4f"%(hm_sum/N))
+        if hm_sum>hm_best:
+            best_p = p
+            hm_best = hm_sum
+print("Best Found:",(hm_best / N))
+print("Best Parameters:",best_p)

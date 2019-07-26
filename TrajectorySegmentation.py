@@ -227,9 +227,12 @@ class TrajectorySegmentation:
         del sec
         return segments, trajectorySegments
 
-    def segment_CBSMoT(self, max_dist=100, min_time=60, time_tolerance=60, merge_tolerance=100):
+    def segment_CBSMoT(self, max_dist=100,area=0.5, min_time=60, time_tolerance=60, merge_tolerance=100):
         cbsmote = CBSmot()
-        index, stops = cbsmote.segment_stops_moves(self.row_data, max_dist, min_time, time_tolerance, merge_tolerance)
+        eps = max_dist
+        if eps is None:
+            eps = CBSmot.get_quantile(self.row_data,area)
+        index, stops = cbsmote.segment_stops_moves(self.row_data, eps, min_time, time_tolerance, merge_tolerance)
         index_move = []
         moves = []
         start = 0

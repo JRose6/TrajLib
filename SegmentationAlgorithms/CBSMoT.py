@@ -1,10 +1,10 @@
 import Distances as d
 import pandas as pd
-# import numpy as np
+import numpy as np
 
 
 class CBSmot:
-
+    nano_to_seconds = 1000000000
     def count_neighbors(self, traj, position, max_dist):
         neighbors = 0
         yet = True
@@ -35,7 +35,7 @@ class CBSmot:
         for stop in stops:
             p1 = stop.index.values[0]
             p2 = stop.index.values[-1]
-            if (p2 - p1).item() / 1000000000 < min_time:
+            if (p2 - p1).item() / CBSmot.nano_to_seconds < min_time:
                 stops_aux.remove(stop)
         return stops_aux
 
@@ -47,7 +47,7 @@ class CBSmot:
 
             p1 = stop.index.values[0]
             p2 = stop.index.values[-1]
-            if (p2 - p1).item() / 1000000000 < min_time:
+            if (p2 - p1).item() / CBSmot.nano_to_seconds < min_time:
                 stops_aux.pop(i)
                 index.pop(i)
             else:
@@ -63,7 +63,7 @@ class CBSmot:
                 s2 = stops[i+1]
                 p2 = s2.index.values[0]
                 p1 = s1.index.values[-1]
-                if (p2 - p1).item() / 1000000000 <= time_tolerance:
+                if (p2 - p1).item() / CBSmot.nano_to_seconds <= time_tolerance:
                     c1 = self.centroid(s1)
                     c2 = self.centroid(s2)
                     if d.Distances.calculate_two_point_distance(c1[0], c1[1], c2[0], c2[1]) <= max_dist:
@@ -82,7 +82,7 @@ class CBSmot:
                 s2 = stops[i+1]
                 p2 = s2.index.values[0]
                 p1 = s1.index.values[-1]
-                if (p2 - p1).item() / 1000000000 <= time_tolerance:
+                if (p2 - p1).item() / CBSmot.nano_to_seconds <= time_tolerance:
                     c1 = self.centroid(s1)
                     c2 = self.centroid(s2)
                     if d.Distances.calculate_two_point_distance(c1[0], c1[1], c2[0], c2[1]) <= max_dist:
@@ -143,10 +143,20 @@ class CBSmot:
                 if diff >= time_tolerance:
                     stops.append(traj.loc[p1:p2])
                     index.append([p1, p2])
-        print(len(index))
+        #print(len(index))
         index, stops = self.merge_stop_segment(stops, max_dist, merge_tolerance, index)
         #print(len(index))
         index, stops = self.clean_stops_segment(stops, min_time, index)
         #print(len(index))
         return index, stops
 
+    @staticmethod
+    def get_quantile(traj,area):
+        if area>1 or area<0:
+            raise ValueError("Area must be >=0 and <=1")
+        distances = [1]
+        for i in range(len(traj)-1):
+            p1 = traj.iloc[i]
+            p2 = traj.iloc[i+1]
+            distances.append(d.Distances.calculate_two_point_distance(p1.lat,p1.lon,p2.lat,p2.lon))
+        return np.quantile(distances,area,overwrite_input=True)
