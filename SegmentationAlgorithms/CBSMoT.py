@@ -42,13 +42,17 @@ class CBSmot:
     def clean_stops_segment(self, stops, min_time, index):
         stops_aux = stops.copy()
         i = 0
+        curr_idx=0
         for stop in stops:
+
             p1 = stop.index.values[0]
             p2 = stop.index.values[-1]
             if (p2 - p1).item() / 1000000000 < min_time:
-                stops_aux.remove(stop)
+                stops_aux.pop(i)
                 index.pop(i)
-            i += 1
+            else:
+                i += 1
+
         return index, stops_aux
 
     def merge_stop(self, stops, max_dist, time_tolerance):
@@ -126,10 +130,11 @@ class CBSmot:
         j = 0
         while j < len(traj.index):
             valor = self.count_neighbors(traj, j, max_dist)
+
             neighborhood[j] = valor
             j += valor
             j += 1
-
+        #print(neighborhood)
         for i in range(len(neighborhood)):
             if neighborhood[i] > 0:
                 p1 = pd.to_datetime(traj.iloc[i].name)
@@ -138,8 +143,10 @@ class CBSmot:
                 if diff >= time_tolerance:
                     stops.append(traj.loc[p1:p2])
                     index.append([p1, p2])
-
+        print(len(index))
         index, stops = self.merge_stop_segment(stops, max_dist, merge_tolerance, index)
+        #print(len(index))
         index, stops = self.clean_stops_segment(stops, min_time, index)
+        #print(len(index))
         return index, stops
 

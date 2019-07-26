@@ -227,7 +227,7 @@ class TrajectorySegmentation:
         del sec
         return segments, trajectorySegments
 
-    def segmentByStopMove(self, max_dist=100, min_time=60, time_tolerance=60, merge_tolerance=100):
+    def segment_CBSMoT(self, max_dist=100, min_time=60, time_tolerance=60, merge_tolerance=100):
         cbsmote = CBSmot()
         index, stops = cbsmote.segment_stops_moves(self.row_data, max_dist, min_time, time_tolerance, merge_tolerance)
         index_move = []
@@ -244,6 +244,7 @@ class TrajectorySegmentation:
         positions = index+index_move
         last_idx = 0
         segments = []
+        #print(index,index_move)
         for p in positions:
             idx = self.row_data.index.get_loc(p[1])
             segments.append([last_idx,idx])

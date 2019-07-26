@@ -7,16 +7,42 @@ import time
 import numpy as np
 
 dfs = []
-dfs.append(pd.read_csv('databases/Fishing Vessels/fv_d1.txt',sep=';'))
-dfs.append(pd.read_csv('databases/Fishing Vessels/fv_d2.txt',sep=';'))
-dfs.append(pd.read_csv('databases/Fishing Vessels/fv_d3.txt',sep=';'))
-dfs.append(pd.read_csv('databases/Fishing Vessels/fv_d4.txt',sep=';'))
-dfs.append(pd.read_csv('databases/Fishing Vessels/fv_d5.txt',sep=';'))
-dfs.append(pd.read_csv('databases/Fishing Vessels/fv_d6.txt',sep=';'))
-dfs.append(pd.read_csv('databases/Fishing Vessels/fv_d7.txt',sep=';'))
-dfs.append(pd.read_csv('databases/Fishing Vessels/fv_d8.txt',sep=';'))
-dfs.append(pd.read_csv('databases/Fishing Vessels/fv_d9.txt',sep=';'))
-dfs.append(pd.read_csv('databases/Fishing Vessels/fv_d10.txt',sep=';'))
+def get_fv():
+    dfs.append(pd.read_csv('databases/Fishing Vessels/fv_d1.txt',sep=';'))
+    dfs.append(pd.read_csv('databases/Fishing Vessels/fv_d2.txt',sep=';'))
+    dfs.append(pd.read_csv('databases/Fishing Vessels/fv_d3.txt',sep=';'))
+    dfs.append(pd.read_csv('databases/Fishing Vessels/fv_d4.txt',sep=';'))
+    dfs.append(pd.read_csv('databases/Fishing Vessels/fv_d5.txt',sep=';'))
+    dfs.append(pd.read_csv('databases/Fishing Vessels/fv_d6.txt',sep=';'))
+    dfs.append(pd.read_csv('databases/Fishing Vessels/fv_d7.txt',sep=';'))
+    dfs.append(pd.read_csv('databases/Fishing Vessels/fv_d8.txt',sep=';'))
+    dfs.append(pd.read_csv('databases/Fishing Vessels/fv_d9.txt',sep=';'))
+    dfs.append(pd.read_csv('databases/Fishing Vessels/fv_d10.txt',sep=';'))
+    return dfs
+
+def get_hurr():
+    dfs.append(pd.read_csv('databases/Hurricanes/h_d1.txt',sep=';'))
+    dfs.append(pd.read_csv('databases/Hurricanes/h_d2.txt',sep=';'))
+    dfs.append(pd.read_csv('databases/Hurricanes/h_d3.txt',sep=';'))
+    dfs.append(pd.read_csv('databases/Hurricanes/h_d4.txt',sep=';'))
+    dfs.append(pd.read_csv('databases/Hurricanes/h_d5.txt',sep=';'))
+    dfs.append(pd.read_csv('databases/Hurricanes/h_d6.txt',sep=';'))
+    dfs.append(pd.read_csv('databases/Hurricanes/h_d7.txt',sep=';'))
+    dfs.append(pd.read_csv('databases/Hurricanes/h_d8.txt',sep=';'))
+    dfs.append(pd.read_csv('databases/Hurricanes/h_d9.txt',sep=';'))
+    dfs.append(pd.read_csv('databases/Hurricanes/h_d10.txt',sep=';'))
+    return dfs
+def get_hurr_parms():
+    return ParameterGrid({'max_dist':list(range(15000,100000,5000)),
+                  'min_time':list(range(2,24,2)),
+                  'time_tolerance':list(range(2,12,4)),
+                   'merge_tolerance':list(range(0,1002,500))})
+def get_fv_parms():
+    pass
+
+dfs = get_hurr()
+parameter_grid = get_hurr_parms()
+
 all_dfs = []
 def split_df(df,label='tid'):
     real_dfs = []
@@ -28,26 +54,26 @@ def split_df(df,label='tid'):
 for df in dfs:
     all_dfs+=split_df(df)
 results = []
-for df in all_dfs:
-    ts_obj=TrajectorySegmentation()
-    ts_obj.load_data(lat='latitude',lon='longitude',time_date='time',
-                     labels=['label'],seperator=';',src=df)
-    segment_indexes,segments = ts_obj.segmentByLabel(label='label')
-    ground_truth = TrajectorySegmentation.get_segment_labels(segment_indexes)
-    parameters=  {''}
-    segment_indexes,segments = ts_obj.segmentByStopMove( max_dist=10000,
-                                                         min_time=2,
-                                                         time_tolerance=2000,
-                                                         merge_tolerance=50)
-    print(segment_indexes)
-    predicted = TrajectorySegmentation.get_segment_labels(segment_indexes)
-    print(predicted)
-    results.append([SegmentationEvaluation.harmonic_mean(ground_truth,predicted),
-               SegmentationEvaluation.purity(ground_truth, predicted)[1],
-               SegmentationEvaluation.coverage(ground_truth, predicted)[1]])
-results_df = pd.DataFrame(results,columns=list('hpc'))
-print(np.mean(results,axis=0))
-results_df.to_csv('cbsmot_fv.csv')
-
-
+hm_best = 0
+N=5
+for p in parameter_grid:
+    hm_sum=0
+    for df in all_dfs[:N]:
+        ts_obj=TrajectorySegmentation()
+        ts_obj.load_data(lat='latitude',lon='longitude',time_date='time',
+                         labels=['label'],seperator=';',src=df)
+        segment_indexes,segments = ts_obj.segmentByLabel(label='label')
+        ground_truth = TrajectorySegmentation.get_segment_labels(segment_indexes)
+        segment_indexes,segments = ts_obj.segment_CBSMoT(max_dist=p['max_dist'],
+                                                         min_time=p['min_time']*3600,
+                                                         time_tolerance=p['time_tolerance']*3600,
+                                                         merge_tolerance=p['merge_tolerance'])
+        predicted = TrajectorySegmentation.get_segment_labels(segment_indexes)
+        hm=SegmentationEvaluation.harmonic_mean(ground_truth,predicted)
+        hm_sum += hm
+    print(p,"%.4f"%(hm_sum/N))
+    if hm_sum>hm_best:
+        print("Best Parameters",p)
+        print("Harmonic Mean",(hm_sum/N))
+        hm_best = hm_sum
 
