@@ -238,18 +238,30 @@ class TrajectorySegmentation:
         start = 0
         for valor in index:
             if valor[0] == self.row_data.index[start]:
-                start = self.row_data.index.get_loc(valor[1])+1
+                start = self.row_data.index.get_loc(valor[1])
+                if type(start) is slice:
+                    start = start.start
+                start += 1
                 continue
-            end = self.row_data.index.get_loc(valor[0])-1
+            end = self.row_data.index.get_loc(valor[0])
+            if type(end) is slice:
+                end = end.stop
+            end+=1
             moves.append(self.row_data.loc[self.row_data.index[start]:self.row_data.index[end], :])
             index_move.append([self.row_data.index[start], self.row_data.index[end]])
-            start = self.row_data.index.get_loc(valor[1])+1
+            start = self.row_data.index.get_loc(valor[1])
+            if type(start) is slice:
+                start = start.start
+            start+=1
+
         positions = index+index_move
         last_idx = 0
         segments = []
         #print(index,index_move)
         for p in positions:
             idx = self.row_data.index.get_loc(p[1])
+            if type(idx) is slice:
+                idx = idx.stop
             segments.append([last_idx,idx])
             last_idx = idx+1
         segments.append([last_idx,len(self.row_data)])
