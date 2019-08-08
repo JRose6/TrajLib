@@ -85,7 +85,7 @@ def get_geolife():
 def cbsmot_parms(d):
     ret = None
     if d == DataEnum.HURRICANES:
-        ret = ParameterGrid({'area': list(np.arange(0.1, 1, 0.025)),
+        ret = ParameterGrid({'area': list(np.arange(0.1, 1, 0.1)),
                              'min_time': np.array(range(0, 24, 6))*3600,
                              'time_tolerance': [0],
                              'merge_tolerance': [0]})

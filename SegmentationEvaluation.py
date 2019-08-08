@@ -1,4 +1,6 @@
 import numpy as np
+import math
+
 
 def purity( ground_truth, labels):
     avg = []
@@ -34,3 +36,31 @@ def harmonic_mean(ground_truth,prediction):
     cov = coverage(ground_truth, prediction)[1]
     pur = purity(ground_truth, prediction)[1]
     return (2*cov*pur)/(cov+pur)
+
+
+def error(truth,predicted,method='l2'):
+    f = abs if method=='l1' else lambda x: math.pow(x,2)
+    start_truth = 0
+    start_pred = 0
+    truth_tuples, pred_tuples =[],[]
+    for i in range(len(truth)-1):
+        if truth[i]!=truth[i+1]:
+            truth_tuples.append((start_truth,i))
+            start_truth=i+1
+        if predicted[i]!=predicted[i+1]:
+            pred_tuples.append((start_pred,i))
+            start_pred = i+1
+    truth_tuples.append((start_truth,i))
+    pred_tuples.append((start_pred,i))
+    error = 0
+    errors = []
+    for t in truth_tuples:
+        distances = []
+        for p in pred_tuples:
+            distances.append(abs(t[0]-p[0])+abs(t[1]-p[1]))
+        m = np.min(distances)
+        errors.append(f(m))
+        error+=f(m)
+    print('Truth',truth_tuples)
+    print('Pred',pred_tuples)
+    return errors,error/len(truth_tuples)

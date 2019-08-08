@@ -7,7 +7,7 @@ from databases import load_datasets
 from datetime import datetime
 
 
-dataset = load_datasets.DataEnum.GEOLIFE
+dataset = load_datasets.DataEnum.HURRICANES
 algorithm = load_datasets.AlgoEnum.CBSMoT
 
 data = load_datasets.get_data(dataset,algorithm)
@@ -71,6 +71,7 @@ for i in range(0,len(dfs)):
     hm_sum=0
     cov_sum=0
     pur_sum=0
+    error_l1,error_l2=0,0
     for tdf in test_dfs:
         ts_obj = TrajectorySegmentation()
         ts_obj.load_data(lat='latitude', lon='longitude', time_date='time',
@@ -89,13 +90,17 @@ for i in range(0,len(dfs)):
         hm_sum += hm
         cov_sum += SegmentationEvaluation.coverage(ground_truth, predicted)[1]
         pur_sum += SegmentationEvaluation.purity(ground_truth, predicted)[1]
+        error_l1 += SegmentationEvaluation.error(ground_truth,predicted,method='l1')[1]
+        error_l2 += SegmentationEvaluation.error(ground_truth,predicted,method='l2')[1]
     print("Fold",i,"Results")
     exec_time = datetime.now() - start_time
 
     avg_cov = cov_sum/len(test_dfs)
     avg_pur = pur_sum/len(test_dfs)
     hm = (2*avg_cov*avg_pur)/(avg_cov+avg_pur)
+    error_l1 = error_l1/len(test_dfs)
+    error_l2 = error_l2/len(test_dfs)
     print(hm,avg_pur,avg_cov)
-    results.append([hm,avg_pur,avg_cov,exec_time.seconds,param_count])
+    results.append([hm,avg_pur,avg_cov,error_l1,error_l2,exec_time.seconds,param_count])
 print(results)
-pd.DataFrame(results,columns=['h','p','c','fold_time','param_count']).to_csv(file_name)
+pd.DataFrame(results,columns=['h','p','c','l1','l2','fold_time','param_count']).to_csv(file_name)
