@@ -61,6 +61,4 @@ def error(truth,predicted,method='l2'):
         m = np.min(distances)
         errors.append(f(m))
         error+=f(m)
-    print('Truth',truth_tuples)
-    print('Pred',pred_tuples)
     return errors,error/len(truth_tuples)
