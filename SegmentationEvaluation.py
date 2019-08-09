@@ -54,11 +54,14 @@ def error(truth,predicted,method='l2'):
     pred_tuples.append((start_pred,i))
     error = 0
     errors = []
-    for t in truth_tuples:
+    dist_table = []
+    for p in pred_tuples:
         distances = []
-        for p in pred_tuples:
-            distances.append(abs(t[0]-p[0])+abs(t[1]-p[1]))
-        m = np.min(distances)
-        errors.append(f(m))
-        error+=f(m)
-    return errors,error/len(truth_tuples)
+        for t in truth_tuples:
+            distances.append(f(abs(t[0]-p[0])+abs(t[1]-p[1])))
+        dist_table.append(distances)
+    dist_table = np.array(dist_table)
+    axis_shape = dist_table.shape
+    e1 = np.sum(np.min(dist_table, axis=0)) / axis_shape[1]
+    e2 = np.sum(np.min(dist_table, axis=1)) / axis_shape[0]
+    return max(e1,e2)

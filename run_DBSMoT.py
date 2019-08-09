@@ -1,4 +1,5 @@
 from SegmentationAlgorithms.CBSMoT import CBSmot
+from SegmentationAlgorithms.DBSMoT import DBSMoT
 from sklearn.model_selection import ParameterGrid
 from TrajectorySegmentation import TrajectorySegmentation
 import SegmentationEvaluation
@@ -28,14 +29,28 @@ def split_df(df,label='tid'):
 for df in dfs:
     all_dfs+=split_df(df)
 results = []
+for df in all_dfs:
+    ts_obj=TrajectorySegmentation()
+    ts_obj.load_data(lat='latitude',lon='longitude',time_date='time',
+                     labels=['label'],seperator=';',src=df)
+    segment_indexes,segments = ts_obj.segmentByLabel(label='label')
+    ground_truth = TrajectorySegmentation.get_segment_labels(segment_indexes)
+    #print(len(ground_truth))
+    #segment_indexes,segments = ts_obj.segment_DBSMoT()
+    dbsmot = DBSMoT()
+    print(segment_indexes)
+    segment_indexes = dbsmot.segment(ts_obj,90,
+    60*60*4,4)
+    print(segment_indexes)
 
-ts_obj=TrajectorySegmentation()
-ts_obj.load_data(lat='latitude',lon='longitude',time_date='time',
-                 labels=['label'],seperator=';',src=all_dfs[0])
-segment_indexes,segments = ts_obj.segmentByLabel(label='label')
-ground_truth = TrajectorySegmentation.get_segment_labels(segment_indexes)
-segment_indexes,segments = ts_obj.segment_DBSMoT()
-predicted = TrajectorySegmentation.get_segment_labels(segment_indexes)
-
-
+    predicted = TrajectorySegmentation.get_segment_labels(segment_indexes)
+    p = SegmentationEvaluation.purity(ground_truth,predicted)[1]
+    c = SegmentationEvaluation.coverage(ground_truth,predicted)[1]
+    hm = SegmentationEvaluation.harmonic_mean(ground_truth,predicted)
+    print(p, c, hm)
+    print("********************")
+    results.append([p,c,hm])
+df = pd.DataFrame(results,columns=list('pch'))
+df2 = df.describe()
+df2.to_csv('described.csv')
 

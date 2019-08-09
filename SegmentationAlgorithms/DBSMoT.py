@@ -1,17 +1,26 @@
 import numpy as np
 import math
 
-class DBSmot:
+class DBSMoT:
+
     def segment(self,traj,min_dir_change,min_time,max_tolerance):
-        variation = self.compute_variation(traj)
-        print(np.max(variation))
+        variation = self.compute_variation(traj.row_data)
+        stops = self.find_stops(traj.row_data,variation,min_dir_change,min_time,max_tolerance)
+        moves = []
+        moves = self.find_moves(stops,len(variation))
+        clusters = stops+moves
+        clusters.sort(key=lambda x: x[0])
+        return clusters
+
 
     def compute_variation(self,traj):
         n = len(traj)
-        variation = np.zeros(n)
+        bearing,variation = np.zeros(n),np.zeros(n)
         for i in range(1, n):
-            variation[i] = abs(variation[i - 1] - self.calculate_bearing(traj.iloc[i - 1], traj.iloc[i]))
-        print(variation[155])
+            bearing[i] = self.calculate_bearing(traj.iloc[i-1], traj.iloc[i])
+            variation[i] = abs(bearing[i]-bearing[i-1])
+        variation[0] = variation[1]
+        return variation
 
     def calculate_bearing(self,p1,p2):
         lat1 = math.radians(p1['lon'])
@@ -29,12 +38,52 @@ class DBSmot:
         compass_bearing = (initial_bearing + 360) % 360
         return compass_bearing
 
-    def find_clusters(self,traj,variation,min_dir_change,min_time,max_tolerance):
+    def find_stops(self,traj,variation,min_dir_change,min_time,max_tolerance):
         all_clusters = []
-        n = len(traj)
+        n = len(variation)
         i=0
-        cluster_start = 0
-        cluster_end = 0
+        cluster = []
+        opened = False
         while(i<n):
             if variation[i] > min_dir_change:
-                pass
+                cluster.append(i)
+                opened=True
+            elif opened:
+                end = self.look_ahead(i,variation,min_dir_change,max_tolerance)
+                if end < i+max_tolerance:
+                    cluster += list(range(i,end+1))
+                    i = end
+                else:
+                    start_time = traj.iloc[cluster[0]]['time_date']
+                    end_time = traj.iloc[cluster[len(cluster)-1]]['time_date']
+                    delta = end_time-start_time
+                    if (delta.seconds>min_time):
+                        all_clusters.append((cluster[0],cluster[len(cluster)-1]))
+                    cluster=[]
+                    opened=False
+            i+=1
+        return all_clusters
+
+    def look_ahead(self,current_index,variation,
+                   min_dir_change,max_tolerance):
+        i=current_index
+        while(i<current_index+max_tolerance and i<len(variation)):
+            if variation[i] > min_dir_change:
+                break
+            i+=1
+        return i
+
+
+    def find_moves(self,stops,size):
+        moves = []
+        start = 0
+
+        for i in range(len(stops)):
+            end = stops[i][0]-1
+            if start < end:
+                moves.append((start,end))
+            start = stops[i][1]+1
+        end = size
+        if start<end:
+            moves.append((start, end))
+        return moves

@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from SegmentationAlgorithms.CBSMoT import CBSmot
-from SegmentationAlgorithms.DBSMoT import DBSmot
+from SegmentationAlgorithms.DBSMoT import DBSMoT
 
 
 # pd.options.mode.chained_assignment = 'raise'

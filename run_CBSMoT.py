@@ -7,7 +7,7 @@ from databases import load_datasets
 from datetime import datetime
 
 
-dataset = load_datasets.DataEnum.HURRICANES
+dataset = load_datasets.DataEnum.FISHING
 algorithm = load_datasets.AlgoEnum.CBSMoT
 
 data = load_datasets.get_data(dataset,algorithm)
@@ -21,7 +21,6 @@ label = data['label']
 print(file_name)
 
 all_dfs = []
-
 
 results = []
 best_p = {}
@@ -65,7 +64,7 @@ for i in range(0,len(dfs)):
             hm_best = hm
     print("*"*50)
     print("Best Parameters")
-    print(best_p,"%.4f"%(hm_best/len(train_dfs)))
+    print(best_p,"%.4f"%(hm_best))
     print("*"*50)
 
     hm_sum=0
@@ -76,8 +75,6 @@ for i in range(0,len(dfs)):
         ts_obj = TrajectorySegmentation()
         ts_obj.load_data(lat='latitude', lon='longitude', time_date='time',
                          labels=[label], seperator=';', src=tdf)
-        print(len(ts_obj.row_data))
-
         segment_indexes, segments = ts_obj.segmentByLabel(label=label)
         ground_truth = TrajectorySegmentation.get_segment_labels(segment_indexes)
         segment_indexes, segments = ts_obj.segment_CBSMoT(max_dist=None,
@@ -90,8 +87,8 @@ for i in range(0,len(dfs)):
         hm_sum += hm
         cov_sum += SegmentationEvaluation.coverage(ground_truth, predicted)[1]
         pur_sum += SegmentationEvaluation.purity(ground_truth, predicted)[1]
-        error_l1 += SegmentationEvaluation.error(ground_truth,predicted,method='l1')[1]
-        error_l2 += SegmentationEvaluation.error(ground_truth,predicted,method='l2')[1]
+        error_l1 += SegmentationEvaluation.error(ground_truth,predicted,method='l1')
+        error_l2 += SegmentationEvaluation.error(ground_truth,predicted,method='l2')
     print("Fold",i,"Results")
     exec_time = datetime.now() - start_time
 

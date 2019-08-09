@@ -90,7 +90,7 @@ def cbsmot_parms(d):
                              'time_tolerance': [0],
                              'merge_tolerance': [0]})
     elif d == DataEnum.FISHING:
-        ret = ParameterGrid({'area': list(np.arange(0.1, 1, 0.05)),
+        ret = ParameterGrid({'area': list(np.arange(0.1, 1, 0.1)),
                              'min_time': np.array(range(2, 13, 2))*3600,
                              'time_tolerance': [0],
                              'merge_tolerance': [0]})
